@@ -1,4 +1,4 @@
-#pragma once
+#pragram once
 
 void CreateWindow(int width, int height, const char* title);
 void DestroyWindow();

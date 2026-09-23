@@ -43,8 +43,8 @@ int main()
 {
     CreateWindow(800, 800, "Graphics 1");
     
-    GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./shaders/a1_triangle.vert");
-    GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./shaders/a1_triangle.frag");
+    GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a1_triangle.vert");
+    GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a1_triangle.frag");
     GLuint a1_tri_shader = CreateProgram(a1_tri_vert, a1_tri_frag);
 
     GLuint vertex_buffer_rainbow_positions;
