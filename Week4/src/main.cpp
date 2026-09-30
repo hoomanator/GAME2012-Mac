@@ -142,7 +142,7 @@ int main()
 
         if (IsKeyPressed(KEY_SPACE))
         {
-            ++object_index %= 5;
+            ++object_index %= 6;
         }
 
         switch (object_index)
@@ -196,12 +196,45 @@ int main()
             break;
 
         case 4:
+        {
+            Matrix s4 = MatrixIdentity();
+            Matrix r4 = MatrixIdentity();
+            Matrix t4 = MatrixIdentity();
+            Matrix view4 = MatrixLookAt({ 0.0f, 0.0f, 10.0f }, { 0.0f, 0.0f, 0.0f }, Vector3UnitY);
+            Matrix proj4 = MatrixOrtho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f);
+
+
+            float time = Time();
+            float t = cosf(time) * 0.5 + 0.5f;
+            Vector3 A = { -1.0f, 0.0f, 0.0f };
+            Vector3 B = { 1.0f, 0.0f, 0.0f };
+            Vector3 C = Vector3Lerp(A, B, t);
+            t4 = MatrixTranslate(C.x, C.y, C.z);
+
+            Matrix mvp4 = s4 * r4 * t4 * view4 * proj4;
+
             glUseProgram(a1_tri_shader);
             glUniform3f(u_color, 0.5, 0.5f, 0.5f);
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp4));
             glBindVertexArray(vertex_array_rainbow);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             break;
+        }
+
+        case 5:
+        {
+            glUseProgram(a1_tri_shader);
+
+            Matrix s = MatrixScale(5.0f, 5.0f, 1.0f);
+            Matrix r = MatrixRotateZ(tt * 100.f * DEG2RAD);
+            Matrix t = MatrixTranslate(0.0f, 0.0f, 0.0f);
+            Matrix mvp1 = s * r * t * view * proj;
+            glUniform3f(u_color, 0.6, 0.6f, 0.6f);
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp1));
+            glBindVertexArray(vertex_array_rainbow);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            break;
+        }
         }
 
         // Called at end of the frame to swap buffers and update input
