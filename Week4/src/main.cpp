@@ -244,6 +244,7 @@ int main()
             Vector3 sB = { 10.0f, 10.0f, 1.0f };
             Vector3 sC = Vector3Lerp(sA, sB, a);
 
+            //Spherical Lerp because we interpolate between two quaternions (rotations) instead of two vectors (positions)
             Quaternion qA = QuaternionIdentity();
             Quaternion qB = QuaternionFromEuler(0.0f, 0.0f, 90.0f * DEG2RAD);
             Quaternion qC = QuaternionSlerp(qA, qB, a);
