@@ -47,6 +47,7 @@ static const Vector3 vertex_colors[3] =
 
 int main()
 {
+    //glfwSetErrorCallback(glfw_error_callback);
     CreateWindow(800, 800, "Graphics 1");
 
 
@@ -123,17 +124,20 @@ int main()
     
     // Scale our triangle by a factor of 5, then translate it 5 units forward/"out of the screen" (OpenGL is an RHS so -z = "into the screen")
     Matrix world = MatrixScale(5.0f, 5.0f, 1.0f) * MatrixRotateZ(0.0f * DEG2RAD) *  MatrixTranslate(0.0, 0.0f, 5.0f);
-    Matrix view = MatrixLookAt({ 0.0f, 0.0f, 10.0f }, { 0.0f, 0.0f, 0.0f }, Vector3UnitY);
+    
+    Vector3 camPos { 0.0f, 0.0f, 10.0f };
+    Matrix view = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
 
     // Perspective = 3D projection (closer objects = bigger, farther objects = smaller)
-    Matrix proj = MatrixPerspective(75.0f * DEG2RAD, aspect, near, far);
+    //Matrix proj = MatrixPerspective(75.0f * DEG2RAD, aspect, near, far);
 
     // Orthographic = 2D projection (objects are the same size regardless of distance from camera)
-    //Matrix proj = MatrixOrtho(-10.0f, 10.0f, -10.0f, 10.0f, near, far);
+    Matrix proj = MatrixOrtho(-10.0f, 10.0f, -10.0f, 10.0f, near, far);
 
     Matrix mvp = world * view * proj;
 
-    bool imGUIDemo = true;
+    //Whether or not to show the ImGui demo window
+    bool imGUIDemo = false;
 
     // Generally you want to Scale * Rotate * Translate (order matters)!!!
     //world = MatrixRotateZ(30.0f * DEG2RAD) * MatrixTranslate(0.5f, 0.0f, 0.0f);
@@ -175,6 +179,7 @@ int main()
 
             // Red triangle (closer to the camera)
             world = MatrixTranslate(0.0f, 0.0f, 9.0f);
+            view = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
             mvp = world * view * proj;
             glUniform3f(u_color, 1.0f, 0.0f, 0.0f);
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
@@ -182,6 +187,7 @@ int main()
 
             // Green triangle (further from the camera)
             world = MatrixTranslate(0.0f, 0.0f, 5.0f);
+            view = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
             mvp = world * view * proj;
             glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
@@ -190,6 +196,10 @@ int main()
 
         case 1:
             glUseProgram(a1_tri_shader);
+            world = MatrixTranslate(0.0f, 0.0f, 5.0f);
+            view = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
+            mvp = world * view * proj;
+
             glUniform3f(u_color, 0.8, 0.8f, 0.8f);
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glBindVertexArray(vertex_array_rainbow);
@@ -198,6 +208,10 @@ int main()
 
         case 2:
             glUseProgram(a1_tri_shader);
+
+            world = MatrixTranslate(0.0f, 0.0f, 5.0f);
+            view = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
+            mvp = world * view * proj;
             glUniform3f(u_color, 0.6, 0.6f, 0.6f);
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glBindVertexArray(vertex_array_rainbow);
@@ -207,6 +221,10 @@ int main()
         case 3:
         {
             glUseProgram(a1_tri_shader);
+
+            world = MatrixTranslate(0.0f, 0.0f, 5.0f);
+            view = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
+            mvp = world * view * proj;
 
             Matrix s = MatrixScale(5.0f, 5.0f, 1.0f);
             Matrix r = MatrixRotateZ(tt * 100.f * DEG2RAD);
@@ -223,7 +241,7 @@ int main()
             Matrix s4 = MatrixIdentity();
             Matrix r4 = MatrixIdentity();
             Matrix t4 = MatrixIdentity();
-            Matrix view4 = MatrixLookAt({ 0.0f, 0.0f, 10.0f }, { 0.0f, 0.0f, 0.0f }, Vector3UnitY);
+            Matrix view4 = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
             Matrix proj4 = MatrixOrtho(-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f);
 
 
@@ -247,7 +265,7 @@ int main()
         case 5:
         {
 
-            Matrix view5 = MatrixLookAt({ 0.0f, 0.0f, 10.0f }, { 0.0f, 0.0f, 0.0f }, Vector3UnitY);
+            Matrix view5 = MatrixLookAt(camPos, camPos - Vector3UnitZ, Vector3UnitY);
             Matrix proj5 = MatrixOrtho(-10.0f, 10.0f, -10.0f, 10.0f, 0.01f, 100.0f);
 
 
@@ -290,7 +308,10 @@ int main()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow(&imGUIDemo);
+        if (imGUIDemo)
+            ImGui::ShowDemoWindow();
+        
+        ImGui::SliderFloat3("Camera Position", &camPos.x, -10.f, 10.f);    
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

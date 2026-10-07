@@ -8,6 +8,7 @@ int WindowHeight();
 
 void SetWindowShouldClose(bool close);
 bool WindowShouldClose();
+void glfw_error_callback(int error, const char* description);
 
 float Time();
 void Loop();
