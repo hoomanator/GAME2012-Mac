@@ -57,7 +57,7 @@ int main()
     glGenBuffers(1, &vbo_line_positions);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_line_positions);
     glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertex_positions), line_vertex_positions, GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertex_positions2), line_vertex_positions2, GL_STATIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertex_positions2), line_vertex_positions2, GL_STATIC_DRAW);
     // Comment/uncomment to see 1st square vs 2nd square.
     // Your job is to automate the generation of squares so all 8 squares are rendered at once!
 
@@ -93,7 +93,14 @@ int main()
         {
             SendMat4(mvp, "u_mvp");
             SendVec3(Vector3UnitX, "u_color");
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_line_positions);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line_vertex_positions), line_vertex_positions);    
             glDrawArrays(GL_LINES, 0, line_vertex_count);
+
+            SendVec3({ 0.0f, 1.0f, 0.0f }, "u_color");
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line_vertex_positions2), line_vertex_positions2);
+            glDrawArrays(GL_LINES, 0, line_vertex_count);
+
         }
         EndShader();
 
