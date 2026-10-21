@@ -197,11 +197,26 @@ int main()
         printf("Line %d: start=(%f, %f), end=(%f, %f)\n", i, lines[i].start.x, lines[i].start.y, lines[i].end.x, lines[i].end.y);
     }
 
+    std::vector<Vector3> linesColor(SCREEN_WIDTH);
+    for (int i = 0; i < SCREEN_WIDTH; i++)
+    {
+        linesColor[i] = Vector3{1.0f, 1.0f, 1.0f};
+    }
+
+
+
+
     GLuint vbo_lines;
     glGenBuffers(1, &vbo_lines);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_lines);
     glBufferData(GL_ARRAY_BUFFER, sizeof(lines) * sizeof(Line) * SCREEN_WIDTH, lines.data(), GL_STATIC_DRAW);
 
+    
+    GLuint cbo_lines;
+    glGenBuffers(1, &cbo_lines);
+    glBindBuffer(GL_ARRAY_BUFFER, cbo_lines);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(linesColor) * sizeof(Vector3) * SCREEN_WIDTH, linesColor.data(), GL_STATIC_DRAW);
+    
     GLuint vao_lines;
     glGenVertexArrays(1, &vao_lines);
     glBindVertexArray(vao_lines);
@@ -209,6 +224,11 @@ int main()
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_lines);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), 0);
+
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, cbo_lines);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
+
 
     glBindVertexArray(GL_NONE);
     glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
@@ -308,16 +328,13 @@ int main()
         case 1:
         {
 
-            glLineWidth(15.0f);
+            glUseProgram(a1_tri_shader);
+            GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
+            GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
             glBindVertexArray(vao_lines);
-
-            BeginShader(a2_lines_shader);
-            {
-                SendMat4(mvp, "u_mvp");
-                SendVec3(Vector3UnitX, "u_color");
-                glDrawArrays(GL_LINES, 0, SCREEN_WIDTH * 2);
-            }
-            EndShader();
+            glDrawArrays(GL_TRIANGLES, 0, SCREEN_WIDTH*2);
             break;
         }
 
