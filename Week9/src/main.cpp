@@ -202,10 +202,12 @@ int main()
         //printf("Line %d: start=(%f, %f), end=(%f, %f)\n", i, lines[i].start.x, lines[i].start.y, lines[i].end.x, lines[i].end.y);
     }
 
-    std::vector<Vector3> linesColor(SCREEN_WIDTH);
-    for (int i = 0; i < SCREEN_WIDTH; i++)
+    std::vector<Vector3> linesColor(SCREEN_WIDTH * 2);
+    for (int i = 0; i < SCREEN_WIDTH * 2; i++)
     {
-        linesColor[i] = Vector3{1.0f, 1.0f, 1.0f};
+         float x = Remap(i, 0, SCREEN_WIDTH, 0.0f, 1.0f);
+       
+        linesColor[i] = Vector3{x, x*3, x*5};
     }
 
 
@@ -548,9 +550,9 @@ int main()
 
         case 1:
         {
-            glUseProgram(a2_lines_shader);
-            GLint u_color = glGetUniformLocation(a2_lines_shader, "u_color");
-            GLint u_mvp = glGetUniformLocation(a2_lines_shader, "u_mvp");
+            glUseProgram(shaderLines);
+            GLint u_color = glGetUniformLocation(shaderLines, "u_color");
+            GLint u_mvp = glGetUniformLocation(shaderLines, "u_mvp");
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
             glBindVertexArray(vao_lines);
