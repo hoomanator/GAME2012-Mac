@@ -110,6 +110,58 @@ struct Line
 
 int main()
 {
+
+    CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week9");
+
+    ///////////////////////////Shaders//////////////////////////////////
+
+    /////////////////////////// Triangle Shader //////////////////////////////////
+
+    GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a1_triangle.vert");
+    GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a1_triangle.frag");
+    GLuint a1_tri_shader = CreateProgram(a1_tri_vert, a1_tri_frag);
+
+    ///////////////////////////////LINE SHADER //////////////////////////////
+
+    GLuint a2_lines_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a2_lines.vert");
+    GLuint a2_lines_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a2_lines.frag");
+    GLuint a2_lines_shader = CreateProgram(a2_lines_vert, a2_lines_frag);
+
+        // Vertex shaders:
+    GLuint vs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/default.vert");
+    GLuint vsLines = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/lines.vert");
+    GLuint vsVertexPositionColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
+    GLuint vsColorBufferColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/buffer_color.vert");
+    
+    // Fragment shaders:
+    GLuint fsLines = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/lines.frag");
+    GLuint fsUniformColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/uniform_color.frag");
+    GLuint fsVertexColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
+    GLuint fsTcoords = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/tcoord_color.frag");
+    GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
+    GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
+
+    // Shader programs:
+    GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
+    GLuint shaderVertexPositionColor = CreateProgram(vsVertexPositionColor, fsVertexColor);
+    GLuint shaderVertexBufferColor = CreateProgram(vsColorBufferColor, fsVertexColor);
+    GLuint shaderLines = CreateProgram(vsLines, fsLines);
+    GLuint shaderTcoords = CreateProgram(vs, fsTcoords);
+    GLuint shaderNormals = CreateProgram(vs, fsNormals);
+    GLuint shaderTexture = CreateProgram(vs, fsTexture);
+
+        // Add the triangle shaders
+    GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
+    GLuint triangleFs = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
+    GLuint shaderTriangle = CreateProgram(triangleVs, triangleFs);
+
+    //Add point shader
+    GLuint vsPoints = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/points.vert");
+    GLuint shaderPoints = CreateProgram(vsPoints, fsVertexColor);
+
+
+
+///////// Nested squares (lines) ////////////////////////////
     // Square 0 is the outer square. Each following square connects the midpoints of the previous square's 4 edges.
     // Edge e of a square is stored as vertices [2e, 2e + 1], so the new square's edge e runs from the
     // midpoint of the previous edge e to the midpoint of the previous edge (e + 1) % 4.
@@ -129,14 +181,53 @@ int main()
         }
     }
 
-    CreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Week9");
 
 
-    /////////////////////////// Triangle Shader //////////////////////////////////
 
-    GLuint a1_tri_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a1_triangle.vert");
-    GLuint a1_tri_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a1_triangle.frag");
-    GLuint a1_tri_shader = CreateProgram(a1_tri_vert, a1_tri_frag);
+//////////////////////// Render 1 line for every horizontal pixel ///////////////
+
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<float> start_y(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> end_y(-1.0f, 1.0f);
+
+    std::vector<Line> lines(SCREEN_WIDTH);
+    for (int i = 0; i < SCREEN_WIDTH; i++)
+    {
+        Line &line = lines[i];
+        float x = Remap(i, 0, SCREEN_WIDTH, -1.0f, 1.0f);
+        line.start.x = lines[i].end.x = x;
+
+        lines[i].start.y = start_y(rng);
+        lines[i].end.y = end_y(rng);
+        //printf("Line %d: start=(%f, %f), end=(%f, %f)\n", i, lines[i].start.x, lines[i].start.y, lines[i].end.x, lines[i].end.y);
+    }
+
+    std::vector<Vector3> linesColor(SCREEN_WIDTH);
+    for (int i = 0; i < SCREEN_WIDTH; i++)
+    {
+        linesColor[i] = Vector3{1.0f, 1.0f, 1.0f};
+    }
+
+
+
+    // Create Spiral Pattern
+    std::vector<Vector2> spiralPoints = GenerateSpiralPoints(50000);
+    std::vector<Vector3> spiralColors(spiralPoints.size());
+
+    // Generate color data based on position in the spiral
+    for (size_t i = 0; i < spiralColors.size(); ++i)
+    {
+        float t = static_cast<float>(i) / spiralColors.size();
+        spiralColors[i] = Vector3{
+            0.5f + 0.5f * std::cosf(t * 2 * M_PI),
+            0.5f + 0.5f * std::sinf(t * 4 * M_PI),
+            0.5f + 0.5f * std::sinf(t * 6 * M_PI)
+        };
+    }
+
+
+    ///////// Setting up VAOs, VBOs, and EBOs for the rainbow triangle and white triangle /////////////
+
 
     GLuint vertex_buffer_rainbow_positions;
     GLuint vertex_buffer_rainbow_colors;
@@ -196,11 +287,7 @@ int main()
     glBindVertexArray(GL_NONE);
 
 
-    ///////////////////////////////LINE SHADER //////////////////////////////
 
-    GLuint a2_lines_vert = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/a2_lines.vert");
-    GLuint a2_lines_frag = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/a2_lines.frag");
-    GLuint a2_lines_shader = CreateProgram(a2_lines_vert, a2_lines_frag);
 
     GLuint vbo_line_positions = GenVertexBuffer();
     BindVertexBuffer(vbo_line_positions);
@@ -217,29 +304,7 @@ int main()
     UnbindVertexArray();
     UnbindVertexBuffer();
 
-    //////////////////////// Render 1 line for every horizontal pixel ///////////////
 
-    std::mt19937 rng(std::random_device{}());
-    std::uniform_real_distribution<float> start_y(-1.0f, 1.0f);
-    std::uniform_real_distribution<float> end_y(-1.0f, 1.0f);
-
-    std::vector<Line> lines(SCREEN_WIDTH);
-    for (int i = 0; i < SCREEN_WIDTH; i++)
-    {
-        Line &line = lines[i];
-        float x = Remap(i, 0, SCREEN_WIDTH, -1.0f, 1.0f);
-        line.start.x = lines[i].end.x = x;
-
-        lines[i].start.y = start_y(rng);
-        lines[i].end.y = end_y(rng);
-        //printf("Line %d: start=(%f, %f), end=(%f, %f)\n", i, lines[i].start.x, lines[i].start.y, lines[i].end.x, lines[i].end.y);
-    }
-
-    std::vector<Vector3> linesColor(SCREEN_WIDTH);
-    for (int i = 0; i < SCREEN_WIDTH; i++)
-    {
-        linesColor[i] = Vector3{1.0f, 1.0f, 1.0f};
-    }
 
 
 
@@ -272,22 +337,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
 
 
-    /////////////////////////////////////
 
-        // Create Spiral Pattern
-    std::vector<Vector2> spiralPoints = GenerateSpiralPoints(50000);
-    std::vector<Vector3> spiralColors(spiralPoints.size());
-
-    // Generate color data based on position in the spiral
-    for (size_t i = 0; i < spiralColors.size(); ++i)
-    {
-        float t = static_cast<float>(i) / spiralColors.size();
-        spiralColors[i] = Vector3{
-            0.5f + 0.5f * std::cosf(t * 2 * M_PI),
-            0.5f + 0.5f * std::sinf(t * 4 * M_PI),
-            0.5f + 0.5f * std::sinf(t * 6 * M_PI)
-        };
-    }
 
     GLuint vaoSpiral, vboSpiral, cboSpiral;
     glGenVertexArrays(1, &vaoSpiral);
@@ -310,37 +360,7 @@ int main()
     glBindVertexArray(GL_NONE);
 
     ///////////////////////////////////////
-    // Vertex shaders:
-    GLuint vs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/default.vert");
-    GLuint vsLines = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/lines.vert");
-    GLuint vsVertexPositionColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
-    GLuint vsColorBufferColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/buffer_color.vert");
-    
-    // Fragment shaders:
-    GLuint fsLines = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/lines.frag");
-    GLuint fsUniformColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/uniform_color.frag");
-    GLuint fsVertexColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
-    GLuint fsTcoords = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/tcoord_color.frag");
-    GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
-    GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
 
-    // Shader programs:
-    GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
-    GLuint shaderVertexPositionColor = CreateProgram(vsVertexPositionColor, fsVertexColor);
-    GLuint shaderVertexBufferColor = CreateProgram(vsColorBufferColor, fsVertexColor);
-    GLuint shaderLines = CreateProgram(vsLines, fsLines);
-    GLuint shaderTcoords = CreateProgram(vs, fsTcoords);
-    GLuint shaderNormals = CreateProgram(vs, fsNormals);
-    GLuint shaderTexture = CreateProgram(vs, fsTexture);
-
-        // Add the triangle shaders
-    GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
-    GLuint triangleFs = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
-    GLuint shaderTriangle = CreateProgram(triangleVs, triangleFs);
-
-    //Add point shader
-    GLuint vsPoints = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/points.vert");
-    GLuint shaderPoints = CreateProgram(vsPoints, fsVertexColor);
 
     // Images store their top row first, but OpenGL expects the bottom row first (v = 0 is the bottom)
     stbi_set_flip_vertically_on_load(true);
@@ -543,8 +563,6 @@ int main()
             glUseProgram(a1_tri_shader);
             GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
             GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
-            // world = MatrixScale(2.f, 2.f, 2.f) * MatrixTranslate(5.f, 5.f, 0.f);
-            mvp = world * view * proj;
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glUniform3f(u_color, 0.0f, 1.0f, 0.0f);
             glBindVertexArray(vertex_array_white);
@@ -557,8 +575,6 @@ int main()
             glUseProgram(a1_tri_shader);
             GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
             GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
-            Matrix world2 = MatrixScale(2.f, 2.f, 2.f);
-            mvp = world2 * view * proj;
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
             glBindVertexArray(vertex_array_rainbow);
@@ -573,19 +589,16 @@ int main()
             GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
             GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
 
-            //Matrix view = MatrixLookAt({0.f, 0.f, 10.f}, {0.f, 0.f, 0.f}, {0.f, 1.f, 0.f});
-            //Matrix proj = MatrixOrtho(-10.f, 10.f, -10.f, 10.f, 0.1f, 100.f);
-
             float time = Time();
             float a = cosf(time) * 0.5f + 0.5f;
 
             // Translation Interpolation
-            Vector3 tA = {-10.0f, 10.0f, 0.0f};
-            Vector3 tB = {10.0f, -10.0f, 0.0f};
+            Vector3 tA = {-1.0f, 1.0f, 0.0f};
+            Vector3 tB = {1.0f, -1.0f, 0.0f};
             Vector3 tC = Vector3Lerp(tA, tB, a);
 
             Vector3 sA = {1.0f, 1.0f, 1.0f};
-            Vector3 sB = {5.0f, 5.0f, 1.0f};
+            Vector3 sB = {0.2f, 0.2f, 1.0f};
             Vector3 sC = Vector3Lerp(sA, sB, a);
 
             Quaternion qA = QuaternionIdentity();
@@ -597,9 +610,9 @@ int main()
             Matrix t = MatrixTranslate(tC.x, tC.y, tC.z);
 
             Matrix world2 = s * r * t;
-            mvp = world2 * view * proj;
+            Matrix mvp2 = world2 * view * proj;
 
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
             glBindVertexArray(vertex_array_rainbow);
@@ -610,11 +623,10 @@ int main()
         case 5:
         {
             glUseProgram(shaderTexture);
-            //GLint u_color = glGetUniformLocation(shaderTcoords, "u_color");
             GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
             Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-            mvp = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
             GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
             glUniform1i(u_tex, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -625,11 +637,10 @@ int main()
         case 6:
         {
             glUseProgram(shaderTexture);
-            //GLint u_color = glGetUniformLocation(shaderTcoords, "u_color");
             GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
             Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-            mvp = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
             GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
             glUniform1i(u_tex, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -640,11 +651,10 @@ int main()
         case 7:
         {
             glUseProgram(shaderTexture);
-            //GLint u_color = glGetUniformLocation(shaderTcoords, "u_color");
             GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
             Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-            mvp = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
             GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
             glUniform1i(u_tex, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -655,11 +665,10 @@ int main()
         case 8:
         {
             glUseProgram(shaderTexture);
-            //GLint u_color = glGetUniformLocation(shaderTcoords, "u_color");
             GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
             Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD) * MatrixScale(0.5f, 0.5f, 0.5f) * MatrixTranslate(0.f, -1.f, 0.f);
-            mvp = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
             GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
             glUniform1i(u_tex, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -670,25 +679,22 @@ int main()
 
          case 9:
         {
-            glUseProgram(shaderPoints);
-            GLint u_mvp = glGetUniformLocation(shaderPoints, "u_mvp");
-            mvp = world * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            glBindVertexArray(vaoSpiral);
-            glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
-            glBindVertexArray(GL_NONE);
+            //glUseProgram(shaderPoints);
+            //GLint u_mvp = glGetUniformLocation(shaderPoints, "u_mvp");
+            //glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            //glBindVertexArray(vaoSpiral);
+            //glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
+            //glBindVertexArray(GL_NONE);
 
-            //BindVertexArray(vaoSpiral);
-            //BeginShader(shaderPoints);
-            //{
-            //    mvp = world * view * proj;
-            //    SendMat4(mvp, "u_mvp");               
-            //    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
+            BindVertexArray(vaoSpiral);
+            BeginShader(shaderPoints);
+            {
+                SendMat4(mvp, "u_mvp");               
+                glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
       
-            //}
-            //EndShader();
-            //UnbindVertexArray();
-
+            }
+            EndShader();
+            UnbindVertexArray();
 
             break;
         }
@@ -727,6 +733,7 @@ int main()
     glDeleteProgram(a2_lines_shader);
     glDeleteShader(a2_lines_frag);
     glDeleteShader(a2_lines_vert);
+    //To do: cleanup all the other shaders, buffers, and vertex arrays created in this file
 
     DestroyWindow();
     return 0;
