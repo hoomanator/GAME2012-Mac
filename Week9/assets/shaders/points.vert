@@ -11,4 +11,5 @@ void main()
    vec4 position = vec4(aPosition, 0.0, 1.0);
    color = aColor;
    gl_Position = position;
+   gl_PointSize = 5.0; 
 }

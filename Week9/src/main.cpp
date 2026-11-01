@@ -211,7 +211,7 @@ int main()
 
 
     // Create Spiral Pattern
-    std::vector<Vector2> spiralPoints = GenerateSpiralPoints(50000);
+    std::vector<Vector2> spiralPoints = GenerateSpiralPoints(100000);
     std::vector<Vector3> spiralColors(spiralPoints.size());
 
     // Generate color data based on position in the spiral
@@ -450,6 +450,8 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_LINE_SMOOTH);
 
 
     /////////////////////////
@@ -530,7 +532,7 @@ int main()
         {
         case 0:
         {
-            glLineWidth(5.0f);
+            glLineWidth(2.0f);
             BindVertexArray(vao_line);
             BeginShader(a2_lines_shader);
             {
@@ -540,26 +542,24 @@ int main()
             }
             EndShader();
             UnbindVertexArray();
-            //glLineWidth(1.0f);
+            glLineWidth(1.0f);
             break;
         }
 
         case 1:
         {
-
-            glUseProgram(a1_tri_shader);
-            GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
-            GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+            glUseProgram(a2_lines_shader);
+            GLint u_color = glGetUniformLocation(a2_lines_shader, "u_color");
+            GLint u_mvp = glGetUniformLocation(a2_lines_shader, "u_mvp");
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
             glBindVertexArray(vao_lines);
-            glDrawArrays(GL_TRIANGLES, 0, SCREEN_WIDTH*2);
+            glDrawArrays(GL_LINES, 0, SCREEN_WIDTH*2);
             break;
         }
 
         case 2:
         {
-
             glUseProgram(a1_tri_shader);
             GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
             GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
@@ -584,7 +584,6 @@ int main()
 
         case 4:
         {
-
             glUseProgram(a1_tri_shader);
             GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
             GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
@@ -679,22 +678,22 @@ int main()
 
          case 9:
         {
-            //glUseProgram(shaderPoints);
-            //GLint u_mvp = glGetUniformLocation(shaderPoints, "u_mvp");
-            //glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            //glBindVertexArray(vaoSpiral);
-            //glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
-            //glBindVertexArray(GL_NONE);
+            glUseProgram(shaderPoints);
+            GLint u_mvp = glGetUniformLocation(shaderPoints, "u_mvp");
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            glBindVertexArray(vaoSpiral);
+            glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
+            glBindVertexArray(GL_NONE);
 
-            BindVertexArray(vaoSpiral);
-            BeginShader(shaderPoints);
-            {
-                SendMat4(mvp, "u_mvp");               
-                glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
+            //BindVertexArray(vaoSpiral);
+            //BeginShader(shaderPoints);
+            //{
+            //    SendMat4(mvp, "u_mvp");               
+            //    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
       
-            }
-            EndShader();
-            UnbindVertexArray();
+            //}
+            //EndShader();
+            //UnbindVertexArray();
 
             break;
         }
