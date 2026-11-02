@@ -412,6 +412,8 @@ int main()
     ///
 
     // Create Mesh
+    //An OBJ file stores the physical 3D geometry of a model (such as vertices, faces, normals, and UV coordinates), while an MTL (Material Template Library) file stores the appearance and surface properties (such as colors, shininess, transparency, and links to texture images)
+    //git add -f *.obj  (your gitignore file may be ignoring .obj files, so you may need to force add them to your repo)
     Mesh shapeMesh, cubeMesh, planeMesh, carMesh, headMesh, gunMesh, trexMesh;
     CreateMesh(&shapeMesh, PLANE);
     CreateMesh(&cubeMesh, CUBE);
