@@ -3,9 +3,6 @@
 #include "Buffer.h"
 #include "Mesh.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #include <imgui/imgui.h>
 #include <cstddef>
 #include <cstdlib>
@@ -16,13 +13,6 @@
 constexpr int SCREEN_WIDTH = 800;
 constexpr int SCREEN_HEIGHT = 800;
 
-struct Pixel
-{
-    stbi_uc r = 255;
-    stbi_uc g = 255;
-    stbi_uc b = 255;
-    stbi_uc a = 255;
-};
 
 std::vector<Vector2> GenerateSpiralPoints(int numPoints)
 {
@@ -140,8 +130,7 @@ int main()
     GLuint fsVertexColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
     GLuint fsTcoords = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/tcoord_color.frag");
     GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
-    GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
-
+    
     // Shader programs:
     GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
     GLuint shaderVertexPositionColor = CreateProgram(vsVertexPositionColor, fsVertexColor);
@@ -149,8 +138,7 @@ int main()
     GLuint shaderLines = CreateProgram(vsLines, fsLines);
     GLuint shaderTcoords = CreateProgram(vs, fsTcoords);
     GLuint shaderNormals = CreateProgram(vs, fsNormals);
-    GLuint shaderTexture = CreateProgram(vs, fsTexture);
-
+   
     // Add the triangle shaders
     GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
     GLuint triangleFs = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
@@ -335,94 +323,17 @@ int main()
 
     glBindVertexArray(GL_NONE);
 
-    ///////////////////////////////////////
-
-    // Images store their top row first, but OpenGL expects the bottom row first (v = 0 is the bottom)
-    stbi_set_flip_vertically_on_load(true);
-
-    /// Create Car texture
-
-    int CarWidth = 0;
-    int CarHeight = 0;
-    int CarChannels = 0;
-    stbi_uc *pixelsCar = stbi_load("./assets/textures/ct4_grey.png", &CarWidth, &CarHeight, &CarChannels, 0);
-
-    GLuint carTexture = GL_NONE;
-    glGenTextures(1, &carTexture);
-    glBindTexture(GL_TEXTURE_2D, carTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, CarWidth, CarHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsCar);
-    free(pixelsCar);
-    pixelsCar = nullptr;
-    ///
-
-    /// Create a Head Texture
-    int HeadWidth = 0;
-    int HeadHeight = 0;
-    int HeadChannels = 0;
-    stbi_uc *pixelsHead = stbi_load("./assets/textures/head.png", &HeadWidth, &HeadHeight, &HeadChannels, 0);
-
-    GLuint headTexture = GL_NONE;
-    glGenTextures(1, &headTexture);
-    glBindTexture(GL_TEXTURE_2D, headTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, HeadWidth, HeadHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsHead);
-    free(pixelsHead);
-    pixelsHead = nullptr;
-    ///
-
-    // Note that generating an image ourselves is intuitive in OpenGL's space since it matches 2D array coordinates!
-    int texGradientWidth = 256;
-    int texGradientHeight = 256;
-    Pixel *pixelsGradient = (Pixel *)malloc(texGradientWidth * texGradientHeight * sizeof(Pixel));
-    for (int y = 0; y < texGradientHeight; y++)
-    {
-        for (int x = 0; x < texGradientWidth; x++)
-        {
-            float u = x / (float)texGradientWidth;
-            float v = y / (float)texGradientHeight;
-
-            Pixel pixel;
-            pixel.r = u * 255.0f;
-            pixel.g = v * 255.0f;
-            pixel.b = 255;
-            pixel.a = 255;
-
-            pixelsGradient[y * texGradientWidth + x] = pixel;
-        }
-    }
-
-    GLuint texGradient = GL_NONE;
-    glGenTextures(1, &texGradient);
-    glBindTexture(GL_TEXTURE_2D, texGradient);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texGradientWidth, texGradientHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsGradient);
-    free(pixelsGradient);
-    pixelsGradient = nullptr;
-
-    ///
+    
 
     // Create Mesh
     //An OBJ file stores the physical 3D geometry of a model (such as vertices, faces, normals, and UV coordinates), while an MTL (Material Template Library) file stores the appearance and surface properties (such as colors, shininess, transparency, and links to texture images)
     //git add -f *.obj  (your gitignore file may be ignoring .obj files, so you may need to force add them to your repo)
-    Mesh shapeMesh, cubeMesh, planeMesh, carMesh, headMesh, gunMesh, trexMesh;
+    Mesh shapeMesh, cubeMesh, planeMesh,headMesh;
     CreateMesh(&shapeMesh, PLANE);
     CreateMesh(&cubeMesh, CUBE);
     CreateMesh(&planeMesh, "assets/meshes/plane.obj");
-    CreateMesh(&carMesh, "assets/meshes/ct4.obj");
     CreateMesh(&headMesh, "assets/meshes/head.obj");
-    CreateMesh(&gunMesh, "assets/meshes/Gun.obj");
-    CreateMesh(&trexMesh, "assets/meshes/dynotex.obj");
-
+    
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_PROGRAM_POINT_SIZE);
@@ -454,7 +365,7 @@ int main()
 
         if (IsKeyPressed(KEY_SPACE))
         {
-            ++object_index %= 12;
+            ++object_index %= 10;
         }
 
         float tt = Time();
@@ -595,83 +506,16 @@ int main()
 
         case 5:
         {
-            glUseProgram(shaderTexture);
-            GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
-            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-            Matrix mvp2 = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-            GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
-            glUniform1i(u_tex, 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, headTexture);
-            DrawMesh(headMesh);
-            break;
-        }
-        case 6:
-        {
-            glUseProgram(shaderTexture);
-            GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
-            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-            Matrix mvp2 = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-            GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
-            glUniform1i(u_tex, 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, carTexture);
-            DrawMesh(carMesh);
-            break;
-        }
-        case 7:
-        {
-            glUseProgram(shaderTexture);
-            GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
-            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-            Matrix mvp2 = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-            GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
-            glUniform1i(u_tex, 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, carTexture);
-            DrawMesh(trexMesh);
-            break;
-        }
-        case 8:
-        {
-            glUseProgram(shaderTexture);
-            GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
-            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD) * MatrixScale(0.5f, 0.5f, 0.5f) * MatrixTranslate(0.f, -1.f, 0.f);
-            Matrix mvp2 = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-            GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
-            glUniform1i(u_tex, 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, carTexture);
-            DrawMesh(gunMesh);
-            break;
-        }
-
-        case 9:
-        {
             glUseProgram(shaderPoints);
             GLint u_mvp = glGetUniformLocation(shaderPoints, "u_mvp");
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
             glBindVertexArray(vaoSpiral);
             glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
             glBindVertexArray(GL_NONE);
-
-            // BindVertexArray(vaoSpiral);
-            // BeginShader(shaderPoints);
-            //{
-            //     SendMat4(mvp, "u_mvp");
-            //     glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(spiralPoints.size()));
-
-            //}
-            // EndShader();
-            // UnbindVertexArray();
-
             break;
+
         }
-        case 10:
+        case 6:
         {
             glUseProgram(shaderTcoords);
 
@@ -683,17 +527,39 @@ int main()
             DrawMesh(shapeMesh);
             break;
         }
-        case 11:
+        case 7:
         {
-            glUseProgram(shaderTexture);
-            GLint u_mvp = glGetUniformLocation(shaderTexture, "u_mvp");
+            glUseProgram(shaderNormals);
+
+            GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
             Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
             Matrix mvp2 = world2 * view * proj;
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-            GLint u_tex = glGetUniformLocation(shaderTexture, "u_tex");
-            glUniform1i(u_tex, 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texGradient);
+
+            DrawMesh(shapeMesh);
+            break;
+        }
+        case 8:
+        {
+            glUseProgram(shaderTcoords);
+
+            GLint u_mvp = glGetUniformLocation(shaderTcoords, "u_mvp");
+            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+
+            DrawMesh(headMesh);
+            break;
+        }
+        case 9:
+        {
+            glUseProgram(shaderNormals);
+
+            GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
+            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+
             DrawMesh(headMesh);
             break;
         }
