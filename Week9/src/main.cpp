@@ -328,9 +328,11 @@ int main()
     // Create Mesh
     //An OBJ file stores the physical 3D geometry of a model (such as vertices, faces, normals, and UV coordinates), while an MTL (Material Template Library) file stores the appearance and surface properties (such as colors, shininess, transparency, and links to texture images)
     //git add -f *.obj  (your gitignore file may be ignoring .obj files, so you may need to force add them to your repo)
-    Mesh shapeMesh, cubeMesh, planeMesh,headMesh;
+    Mesh shapeMesh, cubeMesh, sphereMesh, knotMesh, planeMesh,headMesh;
     CreateMesh(&shapeMesh, PLANE);
     CreateMesh(&cubeMesh, CUBE);
+    CreateMesh(&sphereMesh, SPHERE);
+    CreateMesh(&knotMesh, KNOT);
     CreateMesh(&planeMesh, "assets/meshes/plane.obj");
     CreateMesh(&headMesh, "assets/meshes/head.obj");
     
@@ -365,7 +367,7 @@ int main()
 
         if (IsKeyPressed(KEY_SPACE))
         {
-            ++object_index %= 10;
+            ++object_index %= 11;
         }
 
         float tt = Time();
@@ -536,7 +538,7 @@ int main()
             Matrix mvp2 = world2 * view * proj;
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
 
-            DrawMesh(shapeMesh);
+            DrawMesh(sphereMesh);
             break;
         }
         case 8:
@@ -556,11 +558,19 @@ int main()
             glUseProgram(shaderNormals);
 
             GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
-            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
-            Matrix mvp2 = world2 * view * proj;
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
 
             DrawMesh(headMesh);
+            break;
+        }
+        case 10:
+        {
+            glUseProgram(shaderNormals);
+
+            GLint u_mvp = glGetUniformLocation(shaderNormals, "u_mvp");
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+            DrawMesh(knotMesh);
             break;
         }
 

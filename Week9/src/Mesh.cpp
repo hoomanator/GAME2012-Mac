@@ -74,6 +74,11 @@ void CreateMesh(Mesh* mesh, ShapeType shape)
 	case SPHERE:
 		par = par_shapes_create_subdivided_sphere(1);
 		break;
+	case KNOT:
+		//// Tessellate a trefoil knot; same arguments as par_shapes_create_torus.
+        ///par_shapes_mesh* par_shapes_create_trefoil_knot(int slices, int stacks,  float radius);
+		par = par_shapes_create_trefoil_knot(20, 20, 2);
+		break;
 
 	default:
 		assert(false && "Invalid shape type");
