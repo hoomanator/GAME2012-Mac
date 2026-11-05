@@ -428,6 +428,7 @@ int main()
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_set_flip_vertically_on_load(false); // Don't flip skybox textures, as they are already oriented correctly
     for (int i = 0; i < 6; i++)
     {
         int width, height, channels;
@@ -443,7 +444,7 @@ int main()
             stbi_image_free(pixels);
         }
     }
-
+    stbi_set_flip_vertically_on_load(true);
     ///
 
     // Create Mesh
@@ -465,7 +466,7 @@ int main()
 
     /////////////////////////
 
-    int object_index = 10;
+    int object_index = 1;
     int projection_type = ORTHOGRAPHIC;
 
     float aspect = (float)WindowWidth() / (float)WindowHeight();
@@ -554,16 +555,27 @@ int main()
             glLineWidth(1.0f);
             break;
         }
-
+        //skybox cube map - six sided texture
         case 1:
         {
-            glUseProgram(shaderLines);
-            GLint u_color = glGetUniformLocation(shaderLines, "u_color");
-            GLint u_mvp = glGetUniformLocation(shaderLines, "u_mvp");
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
-            glBindVertexArray(vao_lines);
-            glDrawArrays(GL_LINES, 0, SCREEN_WIDTH * 2);
+            glUseProgram(shaderSkybox);
+
+            GLint u_cubemap= glGetUniformLocation(shaderSkybox, "u_cubemap");
+            glUniform1i(u_cubemap, 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, texSkybox);
+
+            GLint u_mvp = glGetUniformLocation(shaderSkybox, "u_mvp");
+            Matrix view2 = MatrixRotateY(100.0f * tt * DEG2RAD) * MatrixRotateX(100.0f * tt * DEG2RAD);
+            
+            //Test your fps camera within this skybox
+            //you need to remove the translation from the view matrix, so that the skybox is always centered on the camera
+            view.m12 = view.m13 = view.m14 = 0.0f;    
+
+            Matrix mvp2 = world * view2 * proj;
+
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+            DrawMesh(cubeMesh);
             break;
         }
 
