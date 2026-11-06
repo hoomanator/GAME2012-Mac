@@ -705,19 +705,62 @@ int main()
             GLint u_lightColor = glGetUniformLocation(shaderPhong, "u_lightColor");
             glUniform3fv(u_lightColor, 1, (float *)&lightColor);
 
+            GLint u_lightRadius = glGetUniformLocation(shaderPhong, "u_lightRadius");
+            glUniform1f(u_lightRadius, lightRadius);
+
             DrawMesh(sphereMesh);
             break;
         }
 
         case 3:
         {
-            glUseProgram(a1_tri_shader);
-            GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
-            GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+            glUseProgram(shaderPhong);
+            //        Matrix view = MatrixLookAt({0.f, 0.f, 10.f}, {0.f, 0.f, 0.f}, Vector3UnitY);
+            Matrix view = MatrixLookAt(cameraPos, cameraPos - Vector3UnitZ, Vector3UnitY);
+
+            view = view * camRotation;
+
+            // world = MatrixScale(lightRadiusDir, lightRadiusDir, lightRadiusDir) * MatrixTranslate(lightPositionDir.x, lightPositionDir.y, lightPositionDir.z);
+            mvp = world * view * proj;
+
+            GLint u_world = glGetUniformLocation(shaderPhong, "u_world");
+            glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
+
+            // Uniform scale preserves the direction of the right, up, and forward vectors, so we can safely use the normal matrix without worrying about scaling issues.
+            // Non-uniform scale can distort the normals, so we need to ensure that the normal matrix is correctly calculated to account for any scaling transformations applied to the model.
+
+            Matrix normal = MatrixInvert(MatrixTranspose(world));
+            GLint u_normal = glGetUniformLocation(shaderPhong, "u_normal");
+            glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
+
+            GLint u_mvp = glGetUniformLocation(shaderPhong, "u_mvp");
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+            GLint u_lightPosition = glGetUniformLocation(shaderPhong, "u_lightPosition");
+            glUniform3fv(u_lightPosition, 1, (float *)&lightPosition);
+
+            GLint u_lightColor = glGetUniformLocation(shaderPhong, "u_lightColor");
+            glUniform3fv(u_lightColor, 1, (float *)&lightColor);
+
+            GLint u_lightRadius = glGetUniformLocation(shaderPhong, "u_lightRadius");
+            glUniform1f(u_lightRadius, lightRadius);
+
+            DrawMesh(sphereMesh);
+
+            //To render our light as a color sphere
+            glUseProgram(shaderUniformColor);
+            Matrix world2 = MatrixScale(lightRadius, lightRadius, lightRadius) * MatrixTranslate(lightPosition.x, lightPosition.y, lightPosition.z);;
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+            normal = MatrixIdentity();
+            GLint u_color = glGetUniformLocation(shaderUniformColor, "u_color");
             glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
-            glBindVertexArray(vertex_array_rainbow);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+            GLint u_intensity = glGetUniformLocation(shaderUniformColor, "u_intensity");
+            glUniform1f(u_intensity, 1.0f);
+            //Draw our light as a sphere
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            DrawMesh(sphereMesh);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             break;
         }
 

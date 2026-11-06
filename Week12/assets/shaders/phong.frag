@@ -7,6 +7,7 @@ out vec4 FragColor;
 
 uniform vec3 u_lightPosition;
 uniform vec3 u_lightColor;
+uniform float u_lightRadius;
 
 void main()
 {
@@ -14,7 +15,11 @@ void main()
     vec3 L = normalize(u_lightPosition - position);
     float dotNL = max(dot(N, L), 0.0);
 
-    vec3 diffuse = u_lightColor * dotNL;
+    //
+    float distance = length(u_lightPosition - position);
+    float attenuation = u_lightRadius / distance;
+
+    vec3 diffuse = u_lightColor * dotNL * attenuation;
     //if you wanto to make the color based on its normal, you can use the following line instead of the above line
     //diffuse = (N + vec3(1.0)) * 0.5;
     FragColor = vec4(diffuse, 1.0);
