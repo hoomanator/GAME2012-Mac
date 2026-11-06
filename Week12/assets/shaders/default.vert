@@ -15,6 +15,7 @@ out vec2 tcoord;
 void main()
 {
    position = (u_world * vec4(aPosition, 1.0)).xyz;
+   // Remove the translation component from the normal matrix to ensure correct normal transformation
    normal = (u_normal * vec4(aNormal, 0.0)).xyz;
    tcoord = aTcoord;
 

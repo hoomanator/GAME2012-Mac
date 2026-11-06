@@ -15,5 +15,7 @@ void main()
     float dotNL = max(dot(N, L), 0.0);
 
     vec3 diffuse = u_lightColor * dotNL;
+    //if you wanto to make the color based on its normal, you can use the following line instead of the above line
+    //diffuse = (N + vec3(1.0)) * 0.5;
     FragColor = vec4(diffuse, 1.0);
 }

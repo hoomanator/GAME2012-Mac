@@ -474,12 +474,12 @@ int main()
     float camPitch = 0;
     float camYaw = 0;
     float camSpeed = 10.0f;
-    
-    Vector3 lightPositionDir = { 10.0f,10.0f,10.0f };
-    Vector3 lightColor = { 1.0f, 1.0f, 0.0f };
+
+    Vector3 lightPositionDir = {10.0f, 10.0f, 10.0f};
+    Vector3 lightColor = {1.0f, 0.6471f, 0.0f};
     float lightRadiusDir = 1.0f;
 
-    Vector3 lightPosition = { 2.0, 0.0, 2.0 };
+    Vector3 lightPosition = {2.0f, 0.0f, 2.0f};
     float lightRadius = 1.0f;
 
     glEnable(GL_DEPTH_TEST);
@@ -509,7 +509,7 @@ int main()
     float dt = 0.0f;
     float timePrev = glfwGetTime();
     float timeCurr = glfwGetTime();
-    Vector3 cameraPos{ 0.0f, 0.0f, 3.0f }; // Camera position
+    Vector3 cameraPos{0.0f, 0.0f, 3.0f}; // Camera position
     double pmx = 0.0, pmy = 0.0, mx = 0.0, my = 0.0;
     /* Loop until the user closes the window */
     while (!WindowShouldClose())
@@ -520,16 +520,17 @@ int main()
 
         Matrix camRotation = QuaternionToMatrix(QuaternionFromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
         Matrix camTranslation = MatrixTranslate(cameraPos.x, cameraPos.y, cameraPos.z);
-        //printf("Cam Rotation: \n", camRotation);
-        Vector3 camRight = { camRotation.m0, camRotation.m1, camRotation.m2 };
-        Vector3 camUp = { camRotation.m4, camRotation.m5, camRotation.m6 };
-        Vector3 camForward = { camRotation.m8, camRotation.m9,camRotation.m10 };
+        // printf("Cam Rotation: \n", camRotation);
+        Vector3 camRight = {camRotation.m0, camRotation.m1, camRotation.m2};
+        Vector3 camUp = {camRotation.m4, camRotation.m5, camRotation.m6};
+        Vector3 camForward = {camRotation.m8, camRotation.m9, camRotation.m10};
         float camDelta = camSpeed * dt;
         Matrix camMatrix = camRotation * camTranslation;
 
-        pmx = mx; pmy = my;
+        pmx = mx;
+        pmy = my;
         glfwGetCursorPos(gApp.window, &mx, &my);
-        Vector2 mouseDelta = { (float)(mx - pmx), (float)(my - pmy) };
+        Vector2 mouseDelta = {(float)(mx - pmx), (float)(my - pmy)};
         float mouseScale = 1.0f;
 
         if (!camToggle)
@@ -579,7 +580,6 @@ int main()
                 glfwSetInputMode(gApp.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
         }
-
 
         if (IsKeyPressed(KEY_ESCAPE))
             SetWindowShouldClose(true);
@@ -651,22 +651,22 @@ int main()
             glLineWidth(1.0f);
             break;
         }
-        //skybox cube map - six sided texture
+        // skybox cube map - six sided texture
         case 1:
         {
             glUseProgram(shaderSkybox);
 
-            GLint u_cubemap= glGetUniformLocation(shaderSkybox, "u_cubemap");
+            GLint u_cubemap = glGetUniformLocation(shaderSkybox, "u_cubemap");
             glUniform1i(u_cubemap, 0);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, texSkybox);
 
             GLint u_mvp = glGetUniformLocation(shaderSkybox, "u_mvp");
             Matrix view2 = MatrixRotateY(100.0f * tt * DEG2RAD) * MatrixRotateX(100.0f * tt * DEG2RAD);
-            
-            //Test your fps camera within this skybox
-            //you need to remove the translation from the view matrix, so that the skybox is always centered on the camera
-            view.m12 = view.m13 = view.m14 = 0.0f;    
+
+            // Test your fps camera within this skybox
+            // you need to remove the translation from the view matrix, so that the skybox is always centered on the camera
+            view.m12 = view.m13 = view.m14 = 0.0f;
 
             Matrix mvp2 = world * view2 * proj;
 
@@ -683,11 +683,14 @@ int main()
 
             view = view * camRotation;
 
-            //world = MatrixScale(lightRadiusDir, lightRadiusDir, lightRadiusDir) * MatrixTranslate(lightPositionDir.x, lightPositionDir.y, lightPositionDir.z);
+            // world = MatrixScale(lightRadiusDir, lightRadiusDir, lightRadiusDir) * MatrixTranslate(lightPositionDir.x, lightPositionDir.y, lightPositionDir.z);
             mvp = world * view * proj;
 
             GLint u_world = glGetUniformLocation(shaderPhong, "u_world");
             glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
+
+            // Uniform scale preserves the direction of the right, up, and forward vectors, so we can safely use the normal matrix without worrying about scaling issues.
+            // Non-uniform scale can distort the normals, so we need to ensure that the normal matrix is correctly calculated to account for any scaling transformations applied to the model.
 
             Matrix normal = MatrixInvert(MatrixTranspose(world));
             GLint u_normal = glGetUniformLocation(shaderPhong, "u_normal");
@@ -698,7 +701,7 @@ int main()
 
             GLint u_lightPosition = glGetUniformLocation(shaderPhong, "u_lightPosition");
             glUniform3fv(u_lightPosition, 1, (float *)&lightPosition);
-            
+
             GLint u_lightColor = glGetUniformLocation(shaderPhong, "u_lightColor");
             glUniform3fv(u_lightColor, 1, (float *)&lightColor);
 
