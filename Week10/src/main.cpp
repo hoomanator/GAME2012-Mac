@@ -141,6 +141,7 @@ int main()
     GLuint fsTcoords = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/tcoord_color.frag");
     GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
     GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
+    GLuint fsTextureMix = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texturemix_color.frag");
 
     // Shader programs:
     GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
@@ -150,6 +151,7 @@ int main()
     GLuint shaderTcoords = CreateProgram(vs, fsTcoords);
     GLuint shaderNormals = CreateProgram(vs, fsNormals);
     GLuint shaderTexture = CreateProgram(vs, fsTexture);
+    GLuint shaderTextureMix = CreateProgram(vs, fsTextureMix);
 
     // Add the triangle shaders
     GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
@@ -522,13 +524,20 @@ int main()
 
         case 1:
         {
-            glUseProgram(shaderLines);
-            GLint u_color = glGetUniformLocation(shaderLines, "u_color");
-            GLint u_mvp = glGetUniformLocation(shaderLines, "u_mvp");
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
-            glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
-            glBindVertexArray(vao_lines);
-            glDrawArrays(GL_LINES, 0, SCREEN_WIDTH * 2);
+            glUseProgram(shaderTextureMix);
+            GLint u_mvp = glGetUniformLocation(shaderTextureMix, "u_mvp");
+            Matrix world2 = MatrixRotateY(100.0f * tt * DEG2RAD);
+            Matrix mvp2 = world2 * view * proj;
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+            GLint u_tex1 = glGetUniformLocation(shaderTextureMix, "u_tex1");
+            GLint u_tex2 = glGetUniformLocation(shaderTextureMix, "u_tex2");
+            glUniform1i(u_tex1, 0);
+            glUniform1i(u_tex2, 1);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texGradient);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, headTexture);
+            DrawMesh(headMesh);
             break;
         }
 
