@@ -17,7 +17,7 @@ void main()
 
     //
     float distance = length(u_lightPosition - position);
-    float attenuation = u_lightRadius / distance;
+    float attenuation = clamp(u_lightRadius / (u_lightRadius + distance), 0.0, 1.0);
 
     vec3 diffuse = u_lightColor * dotNL * attenuation;
     //if you wanto to make the color based on its normal, you can use the following line instead of the above line
