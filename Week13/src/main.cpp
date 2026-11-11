@@ -188,6 +188,7 @@ int main()
     GLuint fsTextureWithPhong = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/textureWithPhong_color.frag");
     GLuint fsColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/grey_color.frag");
     GLuint fsPhong = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/phong.frag");
+    GLuint fsPhong2 = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/phong2.frag");
     GLuint fsReflect = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/reflect.frag");
     GLuint fsRefract = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/refract.frag");
 
@@ -203,9 +204,9 @@ int main()
     GLuint shaderTextureWithPhong = CreateProgram(vs, fsTextureWithPhong);
     GLuint shaderColor = CreateProgram(vs, fsColor);
     GLuint shaderPhong = CreateProgram(vs, fsPhong);
+    GLuint shaderPhong2 = CreateProgram(vs, fsPhong2);
     GLuint shaderReflect = CreateProgram(vs, fsReflect);
     GLuint shaderRefract = CreateProgram(vs, fsRefract);
-
     // Add the triangle shaders
     GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
     GLuint triangleFs = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
@@ -484,7 +485,7 @@ int main()
     for (int i = 0; i < 6; i++)
     {
         int width, height, channels;
-        stbi_uc *pixels = stbi_load(skyboxFaces[i], &width, &height, &channels, 4);
+        stbi_uc *pixels = stbi_load(skyboxFaces[i], &width, &height, &channels, 0);
         if (pixels)
         {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
@@ -498,6 +499,7 @@ int main()
     }
     stbi_set_flip_vertically_on_load(true);
     ///
+
     /// Skybox 2
          const char *skyboxFaces2[6] = {
         "./assets/textures/iceriver/posx.bmp",
@@ -510,8 +512,6 @@ int main()
 
 
     ////
-
-
 
     // Create Mesh
     // An OBJ file stores the physical 3D geometry of a model (such as vertices, faces, normals, and UV coordinates), while an MTL (Material Template Library) file stores the appearance and surface properties (such as colors, shininess, transparency, and links to texture images)
@@ -540,6 +540,9 @@ int main()
 
     Vector3 lightPosition = {2.0f, 0.0f, 2.0f};
     float lightRadius = 1.0f;
+    float ambientFactor = 0.1f;
+    float diffuseFactor = 0.8f;
+    float specularPower = 32.0f;
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -549,7 +552,7 @@ int main()
     /////////////////////////
 
     int object_index = 0;
-    int projection_type = PERSPECTIVE;
+    int projection_type = ORTHOGRAPHIC;
 
     float aspect = (float)WindowWidth() / (float)WindowHeight();
     float near = 0.1f;
@@ -697,75 +700,50 @@ int main()
         {
         case 0:
         {
-            //skybox + environment mapping
-            //Add an imgui slider float from 1.0 to 3.0 that changes the reflective index (u_ration)
-            // Add FPS camera to see all 6 faces of the skybox
-            // Add FPS controls to objects & make a key to cycle between controlling reflected and refracted object
-            glUseProgram(shaderSkybox);
+            glUseProgram(shaderPhong2);
+            //        Matrix view = MatrixLookAt({0.f, 0.f, 10.f}, {0.f, 0.f, 0.f}, Vector3UnitY);
+            Matrix view = MatrixLookAt(cameraPos, cameraPos - Vector3UnitZ, Vector3UnitY);
 
-            GLint u_cubemap = glGetUniformLocation(shaderSkybox, "u_cubemap");
-            glUniform1i(u_cubemap, 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, texSkybox2);
+            view = view * camRotation;
 
-            GLint u_mvp = glGetUniformLocation(shaderSkybox, "u_mvp");
-            Matrix viewSky = view;
-            // you need to remove the translation from the view matrix, so that the skybox is always centered on the camera
-            viewSky.m12 = viewSky.m13 = viewSky.m14 = 0.0f;
-            Matrix worldSky = MatrixIdentity();
-            Matrix mvp2 = worldSky * viewSky * proj;
-
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
-             glDepthMask(GL_FALSE); // Disable depth writing for the reflective object
-            DrawMesh(cubeMesh);
-            glDepthMask(GL_TRUE); // Re-enable depth writing
-
-            glUseProgram(shaderReflect);
-            
-            world = MatrixTranslate(-2.0f, 0.0f, 0.0f);
-            GLint u_world = glGetUniformLocation(shaderReflect, "u_world");
-            glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
-            
+            // world = MatrixScale(lightRadiusDir, lightRadiusDir, lightRadiusDir) * MatrixTranslate(lightPositionDir.x, lightPositionDir.y, lightPositionDir.z);
             mvp = world * view * proj;
 
-            u_mvp = glGetUniformLocation(shaderReflect, "u_mvp");
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+            GLint u_world = glGetUniformLocation(shaderPhong2, "u_world");
+            glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
 
+            // Uniform scale preserves the direction of the right, up, and forward vectors, so we can safely use the normal matrix without worrying about scaling issues.
+            // Non-uniform scale can distort the normals, so we need to ensure that the normal matrix is correctly calculated to account for any scaling transformations applied to the model.
 
             Matrix normal = MatrixInvert(MatrixTranspose(world));
-            GLint u_normal = glGetUniformLocation(shaderReflect, "u_normal");
+            GLint u_normal = glGetUniformLocation(shaderPhong2, "u_normal");
             glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
 
-            GLint u_cameraPos = glGetUniformLocation(shaderReflect, "u_cameraPos");
-            glUniform3f(u_cameraPos, cameraPos.x, cameraPos.y, cameraPos.z);
-            DrawMesh(cubeMesh);
-
-            glUseProgram(shaderRefract);
-
-            world = MatrixTranslate(2.0f, 0.0f, 0.0f);
-            
-            u_world = glGetUniformLocation(shaderRefract, "u_world");
-            glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
-
-            mvp = world * view * proj;
-
-
-            u_mvp = glGetUniformLocation(shaderRefract, "u_mvp");
+            GLint u_mvp = glGetUniformLocation(shaderPhong, "u_mvp");
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
 
+            GLint u_lightPosition = glGetUniformLocation(shaderPhong2, "u_lightPosition");
+            glUniform3fv(u_lightPosition, 1, (float *)&lightPosition);
 
-            GLuint refactiveRatio = glGetUniformLocation(shaderRefract, "u_refractiveRatio");
-            glUniform1f(refactiveRatio, 1.0f / 1.52f); // Set the refractive ratio for glass (approximately 1.52)
+            GLint u_lightColor = glGetUniformLocation(shaderPhong2, "u_lightColor");
+            glUniform3fv(u_lightColor, 1, (float *)&lightColor);
 
+            GLint u_lightRadius = glGetUniformLocation(shaderPhong2, "u_lightRadius");
+            glUniform1f(u_lightRadius, lightRadius);
 
-            normal = MatrixInvert(MatrixTranspose(world));
-            u_normal = glGetUniformLocation(shaderRefract, "u_normal");
-            glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
+            GLint u_cameraPosition = glGetUniformLocation(shaderPhong2, "u_cameraPosition");
+            glUniform3fv(u_cameraPosition, 1, (float *)&cameraPos);
 
-            u_cameraPos = glGetUniformLocation(shaderRefract, "u_cameraPos");
-            glUniform3f(u_cameraPos, cameraPos.x, cameraPos.y, cameraPos.z);
-            DrawMesh(cubeMesh);   
+            GLint u_ambientFactor = glGetUniformLocation(shaderPhong2, "u_ambientFactor");
+            glUniform1f(u_ambientFactor, ambientFactor);
 
+            GLint u_diffuseFactor = glGetUniformLocation(shaderPhong2, "u_diffuseFactor");
+            glUniform1f(u_diffuseFactor, diffuseFactor);
+            
+            GLint u_specularPower = glGetUniformLocation(shaderPhong2, "u_specularPower");
+            glUniform1f(u_specularPower, specularPower);
+
+            DrawMesh(sphereMesh);
             break;
         }
         // skybox cube map - six sided texture
@@ -789,7 +767,6 @@ int main()
 
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
             DrawMesh(cubeMesh);
-
             break;
         }
 
@@ -884,38 +861,79 @@ int main()
 
         case 4:
         {
-            glUseProgram(a1_tri_shader);
-            GLint u_color = glGetUniformLocation(a1_tri_shader, "u_color");
-            GLint u_mvp = glGetUniformLocation(a1_tri_shader, "u_mvp");
+            //skybox + environment mapping
+            //Add an imgui slider float from 1.0 to 3.0 that changes the reflective index (u_ration)
+            // Add FPS camera to see all 6 faces of the skybox
+            // Add FPS controls to objects & make a key to cycle between controlling reflected and refracted object
+            glUseProgram(shaderSkybox);
 
-            float time = Time();
-            float a = cosf(time) * 0.5f + 0.5f;
+            GLint u_cubemap = glGetUniformLocation(shaderSkybox, "u_cubemap");
+            glUniform1i(u_cubemap, 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, texSkybox2);
 
-            // Translation Interpolation
-            Vector3 tA = {-1.0f, 1.0f, 0.0f};
-            Vector3 tB = {1.0f, -1.0f, 0.0f};
-            Vector3 tC = Vector3Lerp(tA, tB, a);
+            Matrix view = MatrixLookAt(cameraPos, cameraPos - Vector3UnitZ, Vector3UnitY);
 
-            Vector3 sA = {1.0f, 1.0f, 1.0f};
-            Vector3 sB = {0.2f, 0.2f, 1.0f};
-            Vector3 sC = Vector3Lerp(sA, sB, a);
+            view = view * camRotation;
 
-            Quaternion qA = QuaternionIdentity();
-            Quaternion qB = QuaternionFromEuler(0.0f, 0.0f, 180.0f * DEG2RAD);
-            Quaternion qC = QuaternionSlerp(qA, qB, a);
-
-            Matrix s = MatrixScale(sC.x, sC.y, sC.z);
-            Matrix r = QuaternionToMatrix(qC);
-            Matrix t = MatrixTranslate(tC.x, tC.y, tC.z);
-
-            Matrix world2 = s * r * t;
-            Matrix mvp2 = world2 * view * proj;
+            GLint u_mvp = glGetUniformLocation(shaderSkybox, "u_mvp");
+            Matrix viewSky = view;
+            // you need to remove the translation from the view matrix, so that the skybox is always centered on the camera
+            viewSky.m12 = viewSky.m13 = viewSky.m14 = 0.0f;
+            Matrix worldSky = MatrixIdentity();
+            Matrix mvp2 = worldSky * viewSky * proj;
 
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp2));
+             glDepthMask(GL_FALSE); // Disable depth writing for the reflective object
+            DrawMesh(cubeMesh);
+            glDepthMask(GL_TRUE); // Re-enable depth writing
 
-            glUniform3f(u_color, 1.0f, 1.0f, 1.0f);
-            glBindVertexArray(vertex_array_rainbow);
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glUseProgram(shaderReflect);
+            
+            world = MatrixTranslate(-2.0f, 0.0f, 0.0f);
+            GLint u_world = glGetUniformLocation(shaderReflect, "u_world");
+            glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
+            
+            mvp = world * view * proj;
+
+            u_mvp = glGetUniformLocation(shaderReflect, "u_mvp");
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+
+            Matrix normal = MatrixInvert(MatrixTranspose(world));
+            GLint u_normal = glGetUniformLocation(shaderReflect, "u_normal");
+            glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
+
+            GLint u_cameraPos = glGetUniformLocation(shaderReflect, "u_cameraPos");
+            glUniform3f(u_cameraPos, cameraPos.x, cameraPos.y, cameraPos.z);
+            DrawMesh(cubeMesh);
+
+            glUseProgram(shaderRefract);
+
+            world = MatrixTranslate(2.0f, 0.0f, 0.0f);
+            
+            u_world = glGetUniformLocation(shaderRefract, "u_world");
+            glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
+
+            mvp = world * view * proj;
+
+
+            u_mvp = glGetUniformLocation(shaderRefract, "u_mvp");
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+
+            GLuint refactiveRatio = glGetUniformLocation(shaderRefract, "u_refractiveRatio");
+            glUniform1f(refactiveRatio, 1.0f / 1.52f); // Set the refractive ratio for glass (approximately 1.52)
+
+
+            normal = MatrixInvert(MatrixTranspose(world));
+            u_normal = glGetUniformLocation(shaderRefract, "u_normal");
+            glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
+
+            u_cameraPos = glGetUniformLocation(shaderRefract, "u_cameraPos");
+            glUniform3f(u_cameraPos, cameraPos.x, cameraPos.y, cameraPos.z);
+            DrawMesh(cubeMesh);   
+
             break;
         }
 

@@ -148,6 +148,7 @@ int main()
     GLuint fsTextureWithPhong = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/textureWithPhong_color.frag");
     GLuint fsColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/grey_color.frag");
     GLuint fsPhong = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/phong.frag");
+    GLuint fsPhong2 = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/phong2.frag");
 
     // Shader programs:
     GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
@@ -161,6 +162,7 @@ int main()
     GLuint shaderTextureWithPhong = CreateProgram(vs, fsTextureWithPhong);
     GLuint shaderColor = CreateProgram(vs, fsColor);
     GLuint shaderPhong = CreateProgram(vs, fsPhong);
+    GLuint shaderPhong2 = CreateProgram(vs, fsPhong2);
     // Add the triangle shaders
     GLuint triangleVs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
     GLuint triangleFs = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
@@ -481,6 +483,9 @@ int main()
 
     Vector3 lightPosition = {2.0f, 0.0f, 2.0f};
     float lightRadius = 1.0f;
+    float ambientFactor = 0.1f;
+    float diffuseFactor = 0.8f;
+    float specularPower = 32.0f;
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -489,7 +494,7 @@ int main()
 
     /////////////////////////
 
-    int object_index = 1;
+    int object_index = 0;
     int projection_type = ORTHOGRAPHIC;
 
     float aspect = (float)WindowWidth() / (float)WindowHeight();
@@ -638,17 +643,50 @@ int main()
         {
         case 0:
         {
-            glLineWidth(2.0f);
-            BindVertexArray(vao_line);
-            BeginShader(a2_lines_shader);
-            {
-                SendMat4(mvp, "u_mvp");
-                SendVec3(Vector3UnitX, "u_color");
-                glDrawArrays(GL_LINES, 0, square_vertex_count);
-            }
-            EndShader();
-            UnbindVertexArray();
-            glLineWidth(1.0f);
+            glUseProgram(shaderPhong2);
+            //        Matrix view = MatrixLookAt({0.f, 0.f, 10.f}, {0.f, 0.f, 0.f}, Vector3UnitY);
+            Matrix view = MatrixLookAt(cameraPos, cameraPos - Vector3UnitZ, Vector3UnitY);
+
+            view = view * camRotation;
+
+            // world = MatrixScale(lightRadiusDir, lightRadiusDir, lightRadiusDir) * MatrixTranslate(lightPositionDir.x, lightPositionDir.y, lightPositionDir.z);
+            mvp = world * view * proj;
+
+            GLint u_world = glGetUniformLocation(shaderPhong2, "u_world");
+            glUniformMatrix4fv(u_world, 1, GL_FALSE, MatrixToFloat(world));
+
+            // Uniform scale preserves the direction of the right, up, and forward vectors, so we can safely use the normal matrix without worrying about scaling issues.
+            // Non-uniform scale can distort the normals, so we need to ensure that the normal matrix is correctly calculated to account for any scaling transformations applied to the model.
+
+            Matrix normal = MatrixInvert(MatrixTranspose(world));
+            GLint u_normal = glGetUniformLocation(shaderPhong2, "u_normal");
+            glUniformMatrix4fv(u_normal, 1, GL_FALSE, MatrixToFloat((normal)));
+
+            GLint u_mvp = glGetUniformLocation(shaderPhong, "u_mvp");
+            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
+
+            GLint u_lightPosition = glGetUniformLocation(shaderPhong2, "u_lightPosition");
+            glUniform3fv(u_lightPosition, 1, (float *)&lightPosition);
+
+            GLint u_lightColor = glGetUniformLocation(shaderPhong2, "u_lightColor");
+            glUniform3fv(u_lightColor, 1, (float *)&lightColor);
+
+            GLint u_lightRadius = glGetUniformLocation(shaderPhong2, "u_lightRadius");
+            glUniform1f(u_lightRadius, lightRadius);
+
+            GLint u_cameraPosition = glGetUniformLocation(shaderPhong2, "u_cameraPosition");
+            glUniform3fv(u_cameraPosition, 1, (float *)&cameraPos);
+
+            GLint u_ambientFactor = glGetUniformLocation(shaderPhong2, "u_ambientFactor");
+            glUniform1f(u_ambientFactor, ambientFactor);
+
+            GLint u_diffuseFactor = glGetUniformLocation(shaderPhong2, "u_diffuseFactor");
+            glUniform1f(u_diffuseFactor, diffuseFactor);
+            
+            GLint u_specularPower = glGetUniformLocation(shaderPhong2, "u_specularPower");
+            glUniform1f(u_specularPower, specularPower);
+
+            DrawMesh(sphereMesh);
             break;
         }
         // skybox cube map - six sided texture
