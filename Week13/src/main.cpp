@@ -133,7 +133,7 @@ GLuint CreateSkybox(const char *skyboxFaces[6])
     for (int i = 0; i < 6; i++)
     {
         int width, height, channels;
-        stbi_uc *pixels = stbi_load(skyboxFaces[i], &width, &height, &channels, 3);
+        stbi_uc *pixels = stbi_load(skyboxFaces[i], &width, &height, &channels, 0);
         if (pixels)
         {
             GLint internalFormat = (channels == 4) ? GL_RGBA : GL_RGB;
@@ -543,6 +543,7 @@ int main()
     float ambientFactor = 0.1f;
     float diffuseFactor = 0.8f;
     float specularPower = 32.0f;
+    float refractionIndex = 1.52f; // Glass
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -922,8 +923,8 @@ int main()
             glUniformMatrix4fv(u_mvp, 1, GL_FALSE, MatrixToFloat(mvp));
 
 
-            GLuint refactiveRatio = glGetUniformLocation(shaderRefract, "u_refractiveRatio");
-            glUniform1f(refactiveRatio, 1.0f / 1.52f); // Set the refractive ratio for glass (approximately 1.52)
+            GLuint refractiionRatio = glGetUniformLocation(shaderRefract, "u_refractiveRatio");
+            glUniform1f(refractiionRatio, 1.0f / refractionIndex); // Set the refractive ratio for glass (approximately 1.52)
 
 
             normal = MatrixInvert(MatrixTranspose(world));
@@ -1074,6 +1075,7 @@ int main()
         ImGui::SliderFloat("Ambient Factor", &ambientFactor, 0.0f, 1.0f);
         ImGui::SliderFloat("Diffuse Factor", &diffuseFactor, 0.0f, 1.0f);
         ImGui::SliderFloat("Specular Factor", &specularPower, 0.0f, 64.0f);
+        ImGui::SliderFloat("Refraction Index", &refractionIndex, 1.0f, 2.0f);
 
         EndGui();
 
