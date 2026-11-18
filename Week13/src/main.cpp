@@ -1071,6 +1071,10 @@ int main()
         ImGui::SliderFloat3("Orbit Light Position", &lightPosition.x, -10.0f, 10.0f);
         ImGui::SliderFloat("Orbit Light Radius", &lightRadius, 0.25f, 10.0f);
 
+        ImGui::SliderFloat("Ambient Factor", &ambientFactor, 0.0f, 1.0f);
+        ImGui::SliderFloat("Diffuse Factor", &diffuseFactor, 0.0f, 1.0f);
+        ImGui::SliderFloat("Specular Factor", &specularPower, 0.0f, 64.0f);
+
         EndGui();
 
         Loop();
