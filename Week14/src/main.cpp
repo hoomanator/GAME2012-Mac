@@ -1006,6 +1006,10 @@ int main()
             DrawSkyBox(texSkybox1, shaderSkybox, cubeMesh, view, proj);
 
             glUseProgram(shaderInstancing);
+
+            GLint u_orbit = glGetUniformLocation(shaderInstancing, "u_orbit");
+            glUniformMatrix4fv(u_orbit, 1, GL_FALSE, MatrixToFloat(MatrixRotateY(5.0f * tt * DEG2RAD)));
+
             // Look up uniforms on the program that is actually bound (shaderInstancing).
             // Each asteroid's world matrix comes from u_world[gl_InstanceID], so u_mvp only needs view * proj.
             GLint u_mvp = glGetUniformLocation(shaderInstancing, "u_mvp");

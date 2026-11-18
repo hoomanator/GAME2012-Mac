@@ -6,6 +6,7 @@ layout (location = 2) in vec2 aTcoord;
 
 uniform mat4 u_mvp;
 uniform mat4 u_world[100];
+uniform mat4 u_orbit;
 uniform mat4 u_normal;
 
 //out vec3 position;
@@ -34,5 +35,5 @@ void main()
    mat4 t = buildTranslation(vec3(0.1 * id, 0.0, 0.0));
    //gl_Position = u_mvp * t * vec4(aPosition, 1.0);
 
-   gl_Position = u_mvp * world * vec4(aPosition, 1.0);
+   gl_Position = u_mvp * u_orbit * world * vec4(aPosition, 1.0);
 }
