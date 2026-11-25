@@ -13,6 +13,11 @@ void GenCube(Mesh *mesh, float width, float height, float length);
 void CreateMesh(Mesh *mesh, const char *path)
 {
 	fastObjMesh *obj = fast_obj_read(path);
+	if (obj == nullptr)
+	{
+		printf("**Error: failed to load mesh %s**\n", path);
+		return;
+	}
 	int count = obj->index_count;
 	mesh->positions.resize(count);
 	mesh->normals.resize(count);
@@ -73,7 +78,19 @@ void CreateMesh(Mesh *mesh, ShapeType shape)
 		break;
 
 	case SPHERE:
-		par = par_shapes_create_subdivided_sphere(3);
+		par = par_shapes_create_subdivided_sphere(1);
+		break;
+	case KNOT:
+		//// Tessellate a trefoil knot; same arguments as par_shapes_create_torus.
+		/// par_shapes_mesh* par_shapes_create_trefoil_knot(int slices, int stacks,  float radius);
+		par = par_shapes_create_trefoil_knot(20, 20, 2);
+		break;
+	case ROCK:
+		// par = par_shapes_create_rock(int seed, int nsubdivisions)
+		par = par_shapes_create_rock(5, 5);
+		break;
+	case TORUS:
+		par = par_shapes_create_torus(30, 40, 0.1);
 		break;
 
 	default:

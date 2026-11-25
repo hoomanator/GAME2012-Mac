@@ -17,8 +17,9 @@ uniform float u_specularPower;
 
 vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
 {
-    vec3 N = normalize(normal); 
-    vec3 L = normalize(u_lightPosition - position);   
+    // 'light' is the light's position (point light) -- for a directional light we pass position = 0 and light = -direction
+    vec3 N = normalize(normal);
+    vec3 L = normalize(light - position);
     vec3 V = normalize(camera - position);
     vec3 R = normalize(reflect(-L,N));
     float dotNL = max(dot(N, L), 0.0);
@@ -38,7 +39,7 @@ vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, floa
 
 vec3 point_light(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower, float radius)
 {
-    vec3 lighting = phong(position, normal, u_cameraPosition, u_lightPosition, u_lightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
+    vec3 lighting = phong(position, normal, camera, light, color, ambientFactor, diffuseFactor, specularPower);
     float dist= length(light - position);
     float attenuation = clamp(radius / dist, 0.0, 1.0);
 
@@ -48,7 +49,7 @@ vec3 point_light(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color
 
 vec3 directional_light(vec3 direction, vec3 normal, vec3 camera, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
 {
-    vec3 lighting = phong(vec3(0.0), normal, u_cameraPosition, -direction, u_lightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
+    vec3 lighting = phong(vec3(0.0), normal, camera, -direction, color, ambientFactor, diffuseFactor, specularPower);
 
     return lighting;
 }
@@ -63,7 +64,10 @@ vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 li
 
 void main()
 {
-    vec3 lighting = directional_light(u_lightDirection, normal, u_cameraPosition, u_lightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
+    // main.cpp (case 9) sets up a point light: u_lightPosition + u_lightRadius
+    vec3 lighting = point_light(position, normal, u_cameraPosition, u_lightPosition, u_lightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
+    // To use a directional light instead, set u_lightDirection from C++ and call:
+    // vec3 lighting = directional_light(u_lightDirection, normal, u_cameraPosition, u_lightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
     // TODO -- test spot light and multiple lights
     FragColor = vec4(lighting, 1.0);
 }

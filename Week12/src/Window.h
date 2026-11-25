@@ -158,13 +158,3 @@ bool IsKeyPressed(int key);		// If a key is pressed (down then up)
 #define KEY_RIGHT_SUPER        347
 #define KEY_MENU               348
 #define KEY_COUNT              512
-
-// Shared application state (defined in Window.cpp)
-struct GLFWwindow;
-struct App
-{
-    GLFWwindow* window = nullptr;
-    int keysPrev[KEY_COUNT]{};
-    int keysCurr[KEY_COUNT]{};
-};
-extern App gApp;

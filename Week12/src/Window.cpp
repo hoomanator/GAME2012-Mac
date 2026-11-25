@@ -10,7 +10,12 @@
 #include <memory>
 #include <cstring>
 
-App gApp;
+struct App
+{
+	GLFWwindow* window = nullptr;
+    int keysPrev[KEY_COUNT]{};
+    int keysCurr[KEY_COUNT]{};
+} gApp;
 
 void KeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
